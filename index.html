@@ -188,27 +188,38 @@
                         userId = user.uid;
                         isAuthReady = true;
                         document.getElementById('user-id-display').textContent = userId;
-                        document.getElementById('loading-screen').classList.add('opacity-0');
-                        setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 300);
-                        document.getElementById('app-container').classList.remove('hidden');
+
+                        // Tjekker om brugerdokumentet findes og opretter det, hvis ikke
+                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
+                        const userDocSnap = await getDoc(userDocRef);
+
+                        if (!userDocSnap.exists()) {
+                            // Opretter en standarddokument, hvis den ikke findes
+                            await setDoc(userDocRef, { balance: 0, transactions: [], goals: [] });
+                        }
 
                         // Lytter i realtid til brugerens finansdata
-                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
                         onSnapshot(userDocRef, (docSnap) => {
                             if (docSnap.exists()) {
                                 const data = docSnap.data();
                                 updateUI(data);
-                            } else {
-                                // Opretter en standarddokument, hvis den ikke findes
-                                setDoc(userDocRef, { balance: 0, transactions: [], goals: [] });
                             }
                         });
+
+                    } else {
+                        // Håndterer situationen, hvor brugeren ikke er logget ind
+                        console.log("Ingen bruger logget ind.");
                     }
                 });
 
             } catch (error) {
                 showModal('Fejl', 'Kunne ikke initialisere appen. Prøv igen senere.');
                 console.error("Firebase Initialization Error:", error);
+            } finally {
+                // Skjuler altid loadingskærmen, når appen er færdig med at initialisere
+                document.getElementById('loading-screen').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 300);
+                document.getElementById('app-container').classList.remove('hidden');
             }
         };
 
