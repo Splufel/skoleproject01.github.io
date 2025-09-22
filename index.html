@@ -1,127 +1,296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Money Tracker App</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #f5f5f5;
-    }
-
-    /* Header / Balance */
-    #home-page {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-
-    #balance {
-      font-size: 3em;
-      margin-bottom: 10px;
-    }
-
-    #last-transaction {
-      font-size: 1.2em;
-      color: #555;
-    }
-
-    /* Bottom nav bar */
-    .bottom-nav {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background-color: #ffffff;
-      border-top: 1px solid #ccc;
-      padding: 10px 0;
-    }
-
-    .nav-button {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 1.2em;
-      color: #333;
-      cursor: pointer;
-    }
-
-    .nav-button:hover {
-      color: #007BFF;
-    }
-
-    /* Page content */
-    .page {
-      display: none;
-      flex: 1;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .active {
-      display: flex;
-    }
-
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min Økonomi App</title>
+    <!-- Tailwind CSS for nem og responsiv styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gray-100 flex flex-col min-h-screen text-gray-800;
+        }
+        .page-content {
+            @apply flex-1 p-4 overflow-y-auto;
+        }
+    </style>
 </head>
-<body>
+<body class="antialiased">
 
-  <!-- Home Page -->
-  <div id="home-page" class="page active">
-    <div id="balance">5,000 kr.</div>
-    <div id="last-transaction">Last transaction: +1000 kr.</div>
-  </div>
-
-  <!-- Add/Remove Page -->
-  <div id="add-page" class="page">
-    <h2>Add/Remove Money</h2>
-    <p>(Inputs and saving system will go here)</p>
-  </div>
-
-  <!-- Notifications Page -->
-  <div id="notifications-page" class="page">
-    <h2>Notifications</h2>
-    <p>No new notifications yet.</p>
-  </div>
-
-  <!-- More Page -->
-  <div id="more-page" class="page">
-    <h2>More</h2>
-    <p>Help, Info, Settings...</p>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <div class="bottom-nav">
-    <div class="nav-button" onclick="showPage('home-page')">
-      🏠<br>Home
+    <!-- Loading-skærm -->
+    <div id="loading-screen" class="fixed inset-0 bg-gray-100 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+        <svg class="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-lg text-gray-600">Henter data...</p>
     </div>
-    <div class="nav-button" onclick="showPage('add-page')">
-      ➕<br>Add
-    </div>
-    <div class="nav-button" onclick="showPage('notifications-page')">
-      🔔<br>Notifications
-    </div>
-    <div class="nav-button" onclick="showPage('more-page')">
-      ⋮<br>More
-    </div>
-  </div>
 
-  <script>
-    function showPage(pageId) {
-      const pages = document.querySelectorAll('.page');
-      pages.forEach(page => page.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
-    }
-  </script>
+    <!-- Hovedindhold -->
+    <div id="app-container" class="hidden flex-1 flex flex-col">
+        <!-- Viser saldo -->
+        <header id="home-page" class="page-content space-y-6">
+            <h1 class="text-3xl font-bold text-center mt-4">Din Økonomi</h1>
+            <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                <p class="text-xl text-gray-500 font-medium">Aktuel saldo</p>
+                <p class="text-5xl font-extrabold mt-1" id="balance-display">0,00 kr.</p>
+            </div>
+            
+            <h2 class="text-2xl font-semibold mt-8">Seneste transaktioner</h2>
+            <ul id="transactions-list" class="bg-white rounded-2xl shadow-lg divide-y divide-gray-200">
+                <!-- Transaktioner indsættes her via JavaScript -->
+                <li class="p-4 text-gray-500 text-center">Ingen transaktioner endnu.</li>
+            </ul>
+        </header>
 
+        <!-- Side til opsparingsmål -->
+        <main id="goals-page" class="page-content hidden space-y-6">
+            <h1 class="text-3xl font-bold text-center mt-4">Dine Mål</h1>
+            <div class="bg-white p-6 rounded-2xl shadow-lg space-y-4">
+                <h2 class="text-xl font-semibold">Opret et nyt mål</h2>
+                <input type="text" id="goal-name-input" placeholder="Navn på mål (f.eks. ny computer)" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="goal-amount-input" placeholder="Målbeløb i kr." class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="add-goal-btn" class="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold shadow-md hover:bg-blue-700 transition-colors">Gem mål</button>
+            </div>
+            
+            <h2 class="text-2xl font-semibold mt-8">Aktive Mål</h2>
+            <ul id="goals-list" class="bg-white rounded-2xl shadow-lg divide-y divide-gray-200">
+                <!-- Mål indsættes her via JavaScript -->
+                <li class="p-4 text-gray-500 text-center">Ingen mål oprettet.</li>
+            </ul>
+        </main>
+        
+        <!-- Notifikationsside -->
+        <main id="notifications-page" class="page-content hidden space-y-4">
+            <h1 class="text-3xl font-bold text-center mt-4">Notifikationer</h1>
+            <ul id="notifications-list" class="bg-white rounded-2xl shadow-lg divide-y divide-gray-200">
+                <!-- Notifikationer indsættes her via JavaScript -->
+                <li class="p-4 text-gray-500 text-center">Ingen nye notifikationer.</li>
+            </ul>
+        </main>
+
+        <!-- Hjælp/Info side -->
+        <main id="help-page" class="page-content hidden space-y-4">
+            <h1 class="text-3xl font-bold text-center mt-4">Om Appen</h1>
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <p class="text-lg font-semibold">Velkommen!</p>
+                <p class="mt-2 text-gray-600">Denne app hjælper dig med at holde styr på din økonomi og dine opsparingsmål.</p>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500 font-semibold">Bruger-ID:</p>
+                    <p class="text-sm font-mono mt-1 break-all" id="user-id-display">Loading...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal til notifikationer -->
+        <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-gray-900 bg-opacity-50"></div>
+            <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm mx-auto z-50">
+                <h2 class="text-2xl font-semibold" id="modal-title"></h2>
+                <p class="mt-2 text-gray-600" id="modal-message"></p>
+                <button id="modal-close-btn" class="mt-4 w-full bg-blue-600 text-white rounded-xl py-2 font-semibold hover:bg-blue-700">Luk</button>
+            </div>
+        </div>
+
+        <!-- Fodpanel med navigationsknapper -->
+        <footer class="bg-white p-2 rounded-t-2xl shadow-2xl sticky bottom-0">
+            <nav class="flex justify-around items-center h-16">
+                <button class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl text-gray-500 hover:text-blue-600 transition-colors" data-target="home-page">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0L0 12h3v12h6v-9h6v9h6V12h3z"/>
+                    </svg>
+                    <span class="text-xs mt-1 font-semibold">Hjem</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl text-gray-500 hover:text-blue-600 transition-colors" data-target="goals-page">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22 17h-2V7h2V17zM16 17h-2V3h2V17zM10 17H8V9h2V17zM4 17H2v-5h2V17z"/>
+                    </svg>
+                    <span class="text-xs mt-1 font-semibold">Mål</span>
+                </button>
+                <button class="nav-btn relative flex flex-col items-center justify-center p-2 rounded-xl text-gray-500 hover:text-blue-600 transition-colors" data-target="notifications-page">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 17h5l-1.406-1.406C18.272 14.654 18 13.882 18 13V10c0-3.072-1.645-5.643-4.5-6.32v-.68c0-.736-.5-1.3-1.25-1.3s-1.25.564-1.25 1.3v.68C7.645 4.357 6 6.928 6 10v3c0 .882-.272 1.654-.594 2.594L4 17h5c0 1.657 1.343 3 3 3s3-1.343 3-3zm-6.406-2.594C9.272 14.654 9 13.882 9 13V10c0-2.43 1.583-4.472 4-5.188V3c0-.138.09-.25.25-.25s.25.112.25.25v1.812c2.417.716 4 2.758 4 5.188v3c0 .882-.272 1.654-.594 2.594L17.594 17H11c0-.138.09-.25.25-.25s.25.112.25.25H9c0-.138.09-.25.25-.25s.25.112.25.25H6.406z"/>
+                    </svg>
+                    <span class="text-xs mt-1 font-semibold">Notifikationer</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center justify-center p-2 rounded-xl text-gray-500 hover:text-blue-600 transition-colors" data-target="help-page">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4c-4.418 0-8 3.582-8 8s3.582 8 8 8 8-3.582 8-8-3.582-8-8-8zm0 14c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6zm-1.5-6h3v-3h-3v-2h3v2h-3zm1.5-5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/>
+                    </svg>
+                    <span class="text-xs mt-1 font-semibold">Mere</span>
+                </button>
+            </nav>
+        </footer>
+    </div>
+    
+    <!-- Firebase og Firestore -->
+    <script type="module">
+        // Importerer nødvendige Firebase-moduler
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        setLogLevel('debug'); // Aktiverer logning for fejlfinding
+
+        // Globale variabler
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Viser en modal med en besked
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        // Lukker modalen
+        document.getElementById('modal-close-btn').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+
+        // Funktion til at skifte side i appen
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        // Henter DOM-elementer og sætter event listeners op for navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetPageId = btn.getAttribute('data-target');
+                navigateTo(targetPageId);
+            });
+        });
+
+        // Initialiserer Firebase og autentificerer brugeren
+        window.onload = async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Brugerentydning med custom token eller anonymt
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Venter på at autentificeringen er klar
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('user-id-display').textContent = userId;
+                        document.getElementById('loading-screen').classList.add('opacity-0');
+                        setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 300);
+                        document.getElementById('app-container').classList.remove('hidden');
+
+                        // Lytter i realtid til brugerens finansdata
+                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
+                        onSnapshot(userDocRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                const data = docSnap.data();
+                                updateUI(data);
+                            } else {
+                                // Opretter en standarddokument, hvis den ikke findes
+                                setDoc(userDocRef, { balance: 0, transactions: [], goals: [] });
+                            }
+                        });
+                    }
+                });
+
+            } catch (error) {
+                showModal('Fejl', 'Kunne ikke initialisere appen. Prøv igen senere.');
+                console.error("Firebase Initialization Error:", error);
+            }
+        };
+
+        // Funktion til at opdatere UI med data fra databasen
+        function updateUI(data) {
+            // Opdater saldo
+            const formattedBalance = new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(data.balance);
+            document.getElementById('balance-display').textContent = formattedBalance;
+
+            // Opdater transaktioner
+            const transactionsList = document.getElementById('transactions-list');
+            transactionsList.innerHTML = '';
+            if (data.transactions && data.transactions.length > 0) {
+                data.transactions.forEach(t => {
+                    const li = document.createElement('li');
+                    const amountClass = t.amount >= 0 ? 'text-green-600' : 'text-red-600';
+                    const sign = t.amount > 0 ? '+' : '';
+                    li.className = 'p-4 flex justify-between items-center';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-medium">${t.description}</p>
+                            <p class="text-sm text-gray-500">${t.date}</p>
+                        </div>
+                        <p class="font-semibold ${amountClass}">${sign}${new Intl.NumberFormat('da-DK').format(t.amount)} kr.</p>
+                    `;
+                    transactionsList.appendChild(li);
+                });
+            } else {
+                transactionsList.innerHTML = `<li class="p-4 text-gray-500 text-center">Ingen transaktioner endnu.</li>`;
+            }
+
+            // Opdater mål
+            const goalsList = document.getElementById('goals-list');
+            goalsList.innerHTML = '';
+            if (data.goals && data.goals.length > 0) {
+                data.goals.forEach(goal => {
+                    const li = document.createElement('li');
+                    li.className = 'p-4 flex items-center justify-between';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-medium text-lg">${goal.name}</p>
+                            <p class="text-sm text-gray-500">Mål: ${new Intl.NumberFormat('da-DK').format(goal.amount)} kr.</p>
+                        </div>
+                    `;
+                    goalsList.appendChild(li);
+                });
+            } else {
+                goalsList.innerHTML = `<li class="p-4 text-gray-500 text-center">Ingen mål oprettet.</li>`;
+            }
+
+            // Viser notifikation, hvis man har nået et mål (dette er et simpelt eksempel)
+            data.goals.forEach(goal => {
+                if (data.balance >= goal.amount && !goal.notified) {
+                    showModal('Tillykke!', `Du har nået dit mål for "${goal.name}"!`);
+                    // Markerer målet som notificeret i databasen
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
+                    const updatedGoals = data.goals.map(g => g.name === goal.name ? { ...g, notified: true } : g);
+                    updateDoc(userDocRef, { goals: updatedGoals });
+                }
+            });
+        }
+
+        // Gemmer et nyt mål i databasen
+        document.getElementById('add-goal-btn').addEventListener('click', async () => {
+            const goalName = document.getElementById('goal-name-input').value.trim();
+            const goalAmount = parseFloat(document.getElementById('goal-amount-input').value);
+
+            if (goalName && !isNaN(goalAmount) && isAuthReady) {
+                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
+                const userDocSnap = await getDoc(userDocRef);
+                const currentGoals = userDocSnap.data().goals || [];
+                
+                const newGoals = [...currentGoals, { name: goalName, amount: goalAmount, notified: false }];
+                await updateDoc(userDocRef, { goals: newGoals });
+
+                document.getElementById('goal-name-input').value = '';
+                document.getElementById('goal-amount-input').value = '';
+                showModal('Succes!', 'Målet er blevet gemt.');
+            } else {
+                showModal('Fejl', 'Indtast venligst et gyldigt navn og beløb.');
+            }
+        });
+    </script>
 </body>
 </html>
