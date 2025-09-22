@@ -13,7 +13,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            color: #1f2937; /* Tailwind text-gray-800 */
+            color: #006aff; /* Tailwind text-gray-800 */
         }
         .page-content {
             flex: 1 1 0%;
@@ -237,6 +237,8 @@
         }
 
         // Login logic
+        let isLocalLogin = false;
+        let localUser = null;
         loginBtn.addEventListener('click', function() {
             const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
@@ -244,9 +246,14 @@
             const users = getUsers();
             const user = users.find(u => u.username === username && u.password === password);
             if (user) {
+                isLocalLogin = true;
+                localUser = user;
                 loginOverlay.style.display = 'none';
                 document.getElementById('app-container').style.display = '';
                 document.getElementById('loading-screen').style.display = '';
+                // Show local user info
+                document.getElementById('user-id-display').textContent = user.email + ' (' + user.username + ')';
+                // Optionally, load local data here
             } else {
                 errorDiv.style.display = 'block';
             }
@@ -285,21 +292,64 @@
             alert('Konto oprettet! Log ind for at fortsætte.');
         });
 
-        // Importerer nødvendige Firebase-moduler
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        setLogLevel('debug'); // Aktiverer logning for fejlfinding
-
-        // Globale variabler
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth;
-        let userId = null;
-        let isAuthReady = false;
+        // Firebase only if not local login
+        let db, auth, userId = null, isAuthReady = false;
+        let appId, firebaseConfig, initialAuthToken;
+        let firebaseReady = false;
+        if (!isLocalLogin) {
+            // Importerer nødvendige Firebase-moduler
+            import('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js').then(({ initializeApp }) => {
+                import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js').then(({ getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged }) => {
+                    import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js').then(({ getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, setLogLevel }) => {
+                        setLogLevel('debug');
+                        appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                        initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        // Initialiserer Firebase og autentificerer brugeren
+                        window.onload = async () => {
+                            try {
+                                const app = initializeApp(firebaseConfig);
+                                db = getFirestore(app);
+                                auth = getAuth(app);
+                                if (initialAuthToken) {
+                                    await signInWithCustomToken(auth, initialAuthToken);
+                                } else {
+                                    await signInAnonymously(auth);
+                                }
+                                onAuthStateChanged(auth, async (user) => {
+                                    if (user) {
+                                        userId = user.uid;
+                                        isAuthReady = true;
+                                        document.getElementById('user-id-display').textContent = userId;
+                                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/data/finances`);
+                                        const userDocSnap = await getDoc(userDocRef);
+                                        if (!userDocSnap.exists()) {
+                                            await setDoc(userDocRef, { balance: 0, transactions: [], goals: [] });
+                                        }
+                                        onSnapshot(userDocRef, (docSnap) => {
+                                            if (docSnap.exists()) {
+                                                const data = docSnap.data();
+                                                updateUI(data);
+                                            }
+                                        });
+                                    } else {
+                                        console.log("Ingen bruger logget ind.");
+                                    }
+                                });
+                            } catch (error) {
+                                showModal('Fejl', 'Kunne ikke initialisere appen. Prøv igen senere.');
+                                console.error("Firebase Initialization Error:", error);
+                            } finally {
+                                document.getElementById('loading-screen').classList.add('opacity-0');
+                                setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 300);
+                                document.getElementById('app-container').classList.remove('hidden');
+                            }
+                        };
+                        firebaseReady = true;
+                    });
+                });
+            });
+        }
 
         // Viser en modal med en besked
         function showModal(title, message) {
