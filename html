@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Tracker App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    /* Header / Balance */
+    #home-page {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    #balance {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    #last-transaction {
+      font-size: 1.2em;
+      color: #555;
+    }
+
+    /* Bottom nav bar */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: #ffffff;
+      border-top: 1px solid #ccc;
+      padding: 10px 0;
+    }
+
+    .nav-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 1.2em;
+      color: #333;
+      cursor: pointer;
+    }
+
+    .nav-button:hover {
+      color: #007BFF;
+    }
+
+    /* Page content */
+    .page {
+      display: none;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .active {
+      display: flex;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Home Page -->
+  <div id="home-page" class="page active">
+    <div id="balance">5,000 kr.</div>
+    <div id="last-transaction">Last transaction: +1000 kr.</div>
+  </div>
+
+  <!-- Add/Remove Page -->
+  <div id="add-page" class="page">
+    <h2>Add/Remove Money</h2>
+    <p>(Inputs and saving system will go here)</p>
+  </div>
+
+  <!-- Notifications Page -->
+  <div id="notifications-page" class="page">
+    <h2>Notifications</h2>
+    <p>No new notifications yet.</p>
+  </div>
+
+  <!-- More Page -->
+  <div id="more-page" class="page">
+    <h2>More</h2>
+    <p>Help, Info, Settings...</p>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-button" onclick="showPage('home-page')">
+      🏠<br>Home
+    </div>
+    <div class="nav-button" onclick="showPage('add-page')">
+      ➕<br>Add
+    </div>
+    <div class="nav-button" onclick="showPage('notifications-page')">
+      🔔<br>Notifications
+    </div>
+    <div class="nav-button" onclick="showPage('more-page')">
+      ⋮<br>More
+    </div>
+  </div>
+
+  <script>
+    function showPage(pageId) {
+      const pages = document.querySelectorAll('.page');
+      pages.forEach(page => page.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+  </script>
+
+</body>
+</html>
